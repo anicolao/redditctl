@@ -1,0 +1,19 @@
+.direnv/
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.coverage
+htmlcov/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+build/
+dist/
+result
+
+# Local application state and credentials must never be committed.
+*.db
+*.db-shm
+*.db-wal
+google-oauth-client.json
