@@ -1,0 +1,77 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "redditctl"
+version = "0.1.0"
+description = "A rule-aware CLI and TUI for managing a Reddit account"
+readme = "README.md"
+requires-python = ">=3.13"
+license = "GPL-3.0-only"
+authors = [{ name = "Alex Nicolaou" }]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Environment :: Console",
+  "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+  "Programming Language :: Python :: 3.13",
+]
+dependencies = [
+  "google-auth",
+  "google-auth-oauthlib",
+  "google-genai",
+  "httpx",
+  "keyring",
+  "platformdirs",
+  "pydantic",
+  "textual",
+  "typer",
+]
+
+[project.optional-dependencies]
+relay = ["starlette", "uvicorn"]
+
+[project.scripts]
+redditctl = "redditctl.__main__:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/redditctl"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src/redditctl", "tests", "README.md", "VISION.md", "MVP_DESIGN.md", "LICENSE"]
+
+[tool.pytest.ini_options]
+addopts = "-ra --strict-markers"
+asyncio_mode = "auto"
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.coverage.run]
+branch = true
+source = ["redditctl"]
+
+[tool.coverage.report]
+fail_under = 80
+show_missing = true
+skip_covered = true
+
+[tool.mypy]
+python_version = "3.13"
+strict = true
+packages = ["redditctl"]
+exclude = ["tests"]
+plugins = ["pydantic.mypy"]
+
+[[tool.mypy.overrides]]
+module = ["google_auth_oauthlib.*"]
+ignore_missing_imports = true
+
+[tool.ruff]
+target-version = "py313"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "ASYNC", "RUF"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101"]
