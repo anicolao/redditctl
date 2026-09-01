@@ -33,7 +33,7 @@ The primary user is an individual who participates under their own account: an o
 
 They are comfortable in a terminal, value control over their data, and want assistance without handing their voice or account to an opaque service.
 
-Teams, agencies, moderators, and high-volume social media operations are not the initial audience. Supporting them too early would pull the design toward campaigns, permissions, and throughput rather than personal judgment and community fit.
+Teams, agencies, moderators, and high-volume social media operations are outside this product's audience. Designing for them would pull the experience toward campaigns, permissions, and throughput rather than personal judgment and community fit.
 
 ## The product loop
 
@@ -132,9 +132,9 @@ The first post's score and replies are recorded at consistent intervals. An opti
 
 That is the standard: useful automation that creates more awareness, not less.
 
-## Success measures
+## Signs the vision is realized
 
-Early success should be evaluated through reliability and judgment rather than volume:
+The product fulfills this vision through reliability and better judgment rather than greater posting volume:
 
 - users can identify their best-performing contributions at comparable ages;
 - scheduled actions execute once, at the intended time, or fail visibly and safely;
@@ -159,43 +159,7 @@ The project does not aim to become:
 - a permanent archive of other people's deleted content;
 - a promise of rule compliance, placement, engagement, or business results.
 
-Moderation tooling may be a worthwhile separate project, but it should not distort this one. Browser and desktop interfaces may eventually share the same core, but terminal quality comes first.
-
-## Delivery horizons
-
-### Horizon 1: earn read access
-
-Build a dependable, read-only account view. Prove authentication, local storage, metric provenance, exports, and terminal accessibility before adding account mutations.
-
-### Horizon 2: earn drafting trust
-
-Capture rules, show their sources and changes, and build a provider-neutral drafting workspace. Start with Gemini's supported installed-app OAuth flow, and make every remote data transfer understandable and attributable.
-
-### Horizon 3: earn write access
-
-Add previewed publishing, then a durable scheduler with idempotency, bounded retries, approval invalidation, and auditability. Treat edits and follow-up comments as distinct actions with distinct permissions.
-
-### Horizon 4: complete the feedback loop
-
-Add explainable discovery and optional click measurement. Test whether recommendations lead to better fit and whether analytics remain useful under a deliberately minimal data policy.
-
-### Horizon 5: make it boringly dependable
-
-Stabilize the command contract, migrations, backups, recovery, packaging, documentation, and accessibility. A tool trusted with an account should be predictable before it is clever.
-
-## Open decisions
-
-Several choices should remain open until prototypes provide evidence:
-
-- whether later releases should add Claude, OpenAI, or local-model adapters after the Gemini MVP;
-- how much rule data is available through supported interfaces and what requires user-supplied context;
-- the snapshot cadence that is useful without excessive API traffic;
-- whether the redirect service ships as a reference deployment or a separately maintained component;
-- which recommendation techniques work well with public, policy-compliant data;
-- how approval should behave when a scheduled draft changes only cosmetically;
-- which operating systems can provide an acceptable credential-storage experience.
-
-These are product decisions with technical consequences. They should be recorded as short decision documents as the project learns.
+Moderation tooling is a separate product and must not distort this one. Other interfaces may share the same core, but the terminal remains a first-class, complete experience.
 
 ## The long view
 
