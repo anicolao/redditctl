@@ -1,6 +1,6 @@
 # MVP code design
 
-Status: proposed implementation baseline
+Status: implemented MVP baseline
 
 Last reviewed: 2026-09-01
 
@@ -21,7 +21,7 @@ The first release is a single-user, single-account, local-first application. It 
 | Migrations | Numbered, forward-only SQL files | The MVP schema is small enough that an ORM migration framework adds more machinery than value |
 | Scheduler | A small database-backed worker owned by this project | Approval invalidation, preflight checks, leases, and uncertain remote outcomes are domain behavior, not generic cron jobs |
 | Reddit client | A thin in-repository OAuth/API adapter | Makes scopes, rate information, raw capabilities, and failures visible; avoids coupling the domain to a wrapper |
-| MVP LLM | Gemini API through installed-app OAuth | Google documents an official browser OAuth flow and structured Pydantic output; no private web-session tokens are reused |
+| MVP LLM | Gemini on Vertex AI through installed-app OAuth | Google supports browser OAuth and structured Pydantic output; an explicit Cloud project/location avoids private web-session tokens and API keys |
 | Discovery | Reddit search plus SQLite FTS5/BM25 and explicit heuristics | Explainable and cheap; embeddings and a vector database are unnecessary for the first release |
 | Secrets | OS credential store through `keyring` | Keeps refresh tokens and relay credentials out of TOML and SQLite |
 | Development environment | `flake.nix` and `flake.lock` | Pins Python, every Python library, native tools, and CI inputs without installing project software on the host |
@@ -315,7 +315,7 @@ Prompts are versioned files in the package. Each generated revision records prom
 
 ### Gemini authentication
 
-The supported MVP path is Google's installed-application OAuth flow, not a copied Gemini browser cookie and not an unofficial ChatGPT/Claude login bridge. Setup requires the user to create or select a Google Cloud project, enable the Generative Language API, create a desktop OAuth client, and point `redditctl` at the downloaded client JSON. `redditctl llm auth` opens the system browser on Google's authorization page, binds a one-shot loopback callback to `127.0.0.1`, validates OAuth state, and stores the resulting refresh token through `keyring`.
+The supported MVP path is Google's installed-application OAuth flow for Gemini on Vertex AI, not a copied Gemini browser cookie and not an unofficial ChatGPT/Claude login bridge. Setup requires the user to create or select a Google Cloud project, enable Vertex AI, create a desktop OAuth client, and configure the project and location alongside the downloaded client JSON. `redditctl auth gemini` opens the system browser on Google's authorization page, binds a one-shot loopback callback to `127.0.0.1`, validates OAuth state, and stores the resulting refresh token through `keyring`.
 
 The exact OAuth scopes and SDK behavior are proven in a provider access spike and pinned by adapter contract tests. The TUI shows the authenticated Google account identifier when available, the configured Gemini model, and a disclosure of the fields about to be sent. Every draft/review action requires a positive provider-enabled setting; there is no automatic fallback to a different provider or model.
 

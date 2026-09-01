@@ -1,22 +1,21 @@
 # redditctl
 
-`redditctl` is a proposed CLI and terminal UI for managing a Reddit presence from one place. It is designed to help an individual understand how their posts perform, measure outbound link clicks, find communities where a post genuinely belongs, draft rule-aware submissions with an LLM, and schedule posts or follow-up updates.
+`redditctl` is a local-first CLI and terminal UI for managing a Reddit presence from one place. Its MVP synchronizes an account and metric history, measures aggregate outbound clicks, finds communities where a contribution belongs, drafts against versioned rules with Gemini, and executes explicitly approved scheduled posts or thread updates.
 
-> [!IMPORTANT]
-> This repository currently contains the product specification only. The commands and screens below describe the intended interface; they are not implemented yet.
+The MVP is usable but pre-release. In particular, Reddit API credentials and a Google Cloud project with Vertex AI access are external prerequisites that this project cannot provision.
 
 `redditctl` is an independent project and is not affiliated with, endorsed by, or operated by Reddit.
 
-## What it should do
+## What it does
 
-- Show posts and comments in sortable tables with scores, comments, age, subreddit, and locally collected metrics.
+- Show synchronized posts and comments in sortable CLI and TUI tables with scores and replies.
 - Record metric snapshots so trends can be viewed over time rather than only as current totals.
 - Create first-party redirect links and report aggregate clicks without fingerprinting readers.
 - Suggest suitable subreddits based on topic fit, rules, posting requirements, and the author's preferences.
-- Draft and revise posts with an LLM using a cited snapshot of the target subreddit's rules.
+- Draft posts with Gemini through installed-app OAuth using a versioned rules snapshot.
 - Explain potential rule conflicts before anything is submitted.
 - Schedule posts, space similar submissions apart, and plan edits or follow-up comments on existing threads.
-- Keep every publish, edit, and delete action visible and confirmable by default.
+- Keep every scheduled publish, edit, and follow-up action approval-gated and auditable.
 
 ## Product principles
 
@@ -27,49 +26,56 @@
 5. **Local first.** Credentials, drafts, schedules, and analytics stay on the user's machine unless a configured service is required.
 6. **Honest analytics.** Click counts are aggregate measurements with documented limits, not invasive reader tracking.
 
-The longer product rationale is in [VISION.md](VISION.md). The proposed implementation baseline is in [MVP_DESIGN.md](MVP_DESIGN.md).
+The long-term product rationale is in [VISION.md](VISION.md). The implementation baseline is in [MVP_DESIGN.md](MVP_DESIGN.md).
 
-## Proposed experience
+## Quick start
 
-Launch the terminal UI:
+All software comes from the pinned Nix flake; do not install Python or project libraries on the host. Initialize the private local config and database:
 
 ```console
-$ redditctl
+$ nix run . -- init
+$ $EDITOR ~/.config/redditctl/config.toml
 ```
 
-Or use composable commands:
+Set `reddit.client_id` to an approved Reddit installed-app client ID, then authorize and synchronize:
 
 ```console
-# Review recent submissions by score, comments, or click-through rate
-$ redditctl posts list --since 30d --sort score
-$ redditctl posts list --sort ctr --format json
+$ nix run . -- auth reddit
+$ nix run . -- posts sync
+$ nix run . -- posts list --sort score
+$ nix run . -- posts list --sort replies --format json
 
 # Inspect a post and its metric history
-$ redditctl posts show t3_abc123
-$ redditctl metrics watch t3_abc123
+$ nix run . -- posts show t3_abc123
 
-# Find communities that fit a topic or draft
-$ redditctl discover "self-hosted photo backup for families"
-$ redditctl discover --from draft.md --exclude-subreddit selfpromotion
+# Find communities using metadata, current rules, and recent discussions
+$ nix run . -- discover "self-hosted photo backup for families"
 
 # Fetch rules and prepare a rule-aware draft
-$ redditctl rules sync r/DataHoarder
-$ redditctl draft new --subreddit DataHoarder --from notes.md
-$ redditctl draft check draft-018
+$ nix run . -- rules sync DataHoarder
+$ nix run . -- rules check DataHoarder --title "Backup lessons" --body post.md
+$ nix run . -- draft new DataHoarder --from notes.md
 
-# Review before publishing now or later
-$ redditctl publish draft-018 --dry-run
-$ redditctl schedule add draft-018 --at "2026-09-03 10:00 America/Toronto"
-$ redditctl schedule list
+# Freeze, review, and approve a future post
+$ nix run . -- schedule add draft-ab12cd34 --at "2026-09-03T10:00:00-04:00"
+$ nix run . -- schedule approve action-ab12cd3456
+$ nix run . -- worker
 
 # Plan a permitted update to an existing thread
-$ redditctl update plan t3_abc123 --edit-body update.md --at "+2 days"
-$ redditctl update plan t3_abc123 --comment follow-up.md --at "+1 week"
+$ nix run . -- update plan t3_abc123 --edit-body update.md --at "+2d"
+$ nix run . -- update plan t3_abc123 --comment follow-up.md --at "+1w"
 
 # Make a measurable, shareable link
-$ redditctl links create https://example.com/launch --slug launch-notes
-$ redditctl links stats launch-notes --since 7d
+$ nix run . -- auth relay
+$ nix run . -- links create https://example.com/launch --slug launch-notes \
+    --relay-url https://go.example.com
+$ nix run . -- links stats launch-notes --relay-url https://go.example.com
+
+# Open the local read-only dashboard
+$ nix run . -- tui
 ```
+
+For Gemini, create a Google desktop OAuth client, enable Vertex AI in a Google Cloud project, and set `gemini.enabled`, `gemini.oauth_client`, `gemini.project`, and optionally `gemini.location`. `redditctl auth gemini` stores the resulting refresh credential in the OS credential store. The exact notes and cached rules sent to Gemini are explicit inputs to `draft new`; Reddit credentials are never sent to the model.
 
 ### TUI outline
 
@@ -236,62 +242,33 @@ Before implementation or release, the project must verify its behavior against t
 
 Mutating commands should support `--dry-run`. Read commands should support `--format table|json|csv` where meaningful. Stable machine-readable output is part of the public interface.
 
-## Roadmap
+## Beyond the MVP
 
-### 0.1 — Read-only foundation
+The current implementation establishes the local account, rules, draft, schedule, audit, discovery, and relay boundaries. Likely post-MVP work includes richer metric comparisons and exports, draft revision screens, additional officially supported foundation-model providers, complete TUI command parity, backup/restore and retention controls, and broader accessibility and security review.
 
-- OAuth login and account profiles
-- Post/comment inventory and metric snapshots
-- SQLite schema, JSON/CSV export, and audit log
-- CLI plus read-only overview TUI
+## Development environment
 
-### 0.2 — Rules and drafting
-
-- Rule snapshots and change detection
-- Draft workspace and linting
-- Gemini OAuth and structured drafting adapter
-- Human-readable publication preview
-
-### 0.3 — Publishing and scheduling
-
-- Explicitly approved submissions
-- Durable scheduler with spacing policies
-- Planned edits and follow-up comments
-- Recovery, idempotency, and failure reporting
-
-### 0.4 — Discovery and links
-
-- Explainable subreddit recommendations
-- Optional privacy-preserving redirect service
-- Click reports joined to post metrics
-- Backup, restore, retention, and deletion tools
-
-### 1.0 — Trustworthy daily use
-
-- Stable command and data-export contracts
-- Accessibility and cross-platform packaging
-- Security and privacy review
-- Complete operational documentation
-
-## Development environment and status
-
-The proposed MVP uses Python 3.13, Textual, SQLite, and a Gemini foundation-model adapter. All development tools—including Python, Python libraries, formatters, tests, Git, and GitHub CLI—are supplied by the pinned Nix flake. Installing project software directly on the host with `pip`, `uv`, Homebrew, `apt`, `npm`, or similar tools is not supported.
+The MVP uses Python 3.13, Textual, SQLite, and a Gemini foundation-model adapter. All development tools—including Python, Python libraries, formatters, tests, Git, and GitHub CLI—are supplied by the pinned Nix flake. Installing project software directly on the host with `pip`, `uv`, Homebrew, `apt`, `npm`, or similar tools is not supported.
 
 ```console
-$ nix develop --command python --version
+$ nix develop --command ruff format --check .
+$ nix develop --command ruff check .
+$ nix develop --command mypy src
+$ nix develop --command coverage run -m pytest
+$ nix develop --command coverage report
 $ nix flake check
 ```
 
-`flake.lock` is committed and is the dependency lock for development. Commands in project documentation and CI run through `nix develop --command ...` or `nix flake check`. The first implementation milestone remains read-only until its data model and credential handling have been reviewed.
+`flake.lock` is committed and is the dependency lock for development. The flake check builds the package and runs formatting, linting, strict type checking, tests, branch coverage, and wheel/sdist construction in the same self-contained environment used by CI.
 
 ## Contributing
 
-Early contributions are best made as design discussions or narrowly scoped prototypes. Useful starting points include:
+Useful contributions include:
 
 - documenting real account-management workflows and failure cases;
 - testing what information is reliably available for different post types;
-- specifying the SQLite schema and machine-readable command output;
-- prototyping keyboard navigation with screen-reader-friendly labels;
+- improving stable machine-readable command output;
+- expanding keyboard navigation with screen-reader-friendly labels;
 - defining fixtures for rule changes, rate limits, deleted posts, and scheduler restarts.
 
 Any proposal that increases posting volume should also explain its safeguards against repetition, poor community fit, and policy violations.
